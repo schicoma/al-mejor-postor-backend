@@ -46,6 +46,8 @@ exports.hello = functions.https.onRequest((request, response) => {
 
             return response.send(JSON.stringify("Hola sebastian"));
 
+        }).catch(error =>{ 
+            console.log(error);
         });
 
     console.log("2");
