@@ -1,0 +1,9 @@
+language: node_js
+node_js:
+  - "8"
+script:
+ - echo "Deploy on GIITHUB, I'm so happy !!"
+install:
+  - npm install -g firebase-tools
+after_success:
+  - firebase deploy  --project angular-crud-firebase-9d4e9 --only functions --token $FIREBASE_TOKEN --debug
