@@ -13,18 +13,6 @@ let transporter = nodemailer.createTransport({
     }
 });
 
-const runtimeOpts = {
-    timeoutSeconds: 300
-}
-
-exports.myStorageFunction = functions
-    .runWith(runtimeOpts)
-    .storage
-    .object()
-    .onFinalize((object) => {
-        // do some complicated things that take a lot of memory and time
-    });
-
 exports.sendMail = functions.https.onRequest((request, response) => {
     cors(request, response, () => {
         const to = 'fchicoma01@gmail.com';
@@ -48,7 +36,19 @@ exports.sendMail = functions.https.onRequest((request, response) => {
 });
 
 exports.hello = functions.https.onRequest((request, response) => {
-    return response.send(JSON.stringify("Hola sebastian"));
+
+    console.log("1");
+
+    admin.firestore().collection('usuarios').add({ 'holi': { 'name': "boli" } })
+        .then(writeResult => {
+            // write is complete here
+            console.log("3");
+
+            return response.send(JSON.stringify("Hola sebastian"));
+
+        });
+
+    console.log("2");
 });
 
 // Función que se ejecutará al crear a un usuario
@@ -58,18 +58,6 @@ exports.onCreateUsers = functions.firestore.document('usuarios/{identificador}')
         // context.params.userId == "marie"
         // ... and ...
         // change.after.data() == {name: "Marie"}
-
-        console.log(context.params);
-        console.log(change.after.data());
-    });
-
-exports.onCreateUsersTmp = functions.firestore.document('oKsfN4aPheWK42VpikPa/{identificador}')
-    .onWrite((change, context) => {
-        // If we set `/users/marie` to {name: "Marie"} then
-        // context.params.userId == "marie"
-        // ... and ...
-        // change.after.data() == {name: "Marie"}
-
-        console.log(context.params);
-        console.log(change.after.data());
+        console.log("viendo cambios para nuevo usuario: " + context.params.identificador);
+        console.log(JSON.stringify(change.after.data()));
     });
