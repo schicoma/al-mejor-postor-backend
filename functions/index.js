@@ -21,7 +21,7 @@ exports.sendMail = functions.https.onRequest((request, response) => {
             from: '"Sebastian :D" <sebastianchicoma97@gmail.com>',
             to: to,
             subject: 'Hola pepón',
-            html: '<b>GITHUB INTEGRATION WITH TRAVIS</b>'
+            html: '<b>GITHUB INTEGRATION WITH TRAVIS (ONLY MASTER)</b>'
         };
 
         return transporter.sendMail(mailOptions, (error, info) => {
