@@ -66,8 +66,10 @@ exports.onCreateUsers = functions.firestore.document('usuarios/{identificador}')
                 + '<a href="http://www.google.com.pe">http://www.google.com.pe</a>'
         };
         console.log("preparando correo " + JSON.stringify(mailOptions));
+
         return transporter.sendMail(mailOptions).then((info) => {
             console.log("Correo enviado correctamente");
+            return true;
         }).catch(error => {
             console.log("Error al enviar correo");
         });
