@@ -16,12 +16,15 @@ let transporter = nodemailer.createTransport({
 exports.sendMail = functions.https.onRequest((request, response) => {
     cors(request, response, () => {
         const to = 'sebastianchicoma97@gmail.com';
-
         const mailOptions = {
-            from: '"Sebastian :D" <sebastianchicoma97@gmail.com>',
+            from: '"Al mejor postor" <info@almejorpostor.com>',
             to: to,
-            subject: 'Hola pepón',
-            html: '<b>GITHUB INTEGRATION WITH TRAVIS (ONLY MASTER)</b>'
+            subject: 'Correo de activación',
+            html: '<b>Correo de activación</b>'
+                + '<br/>'
+                + '<span>Hola Sebastian, sigue el enlace para poder activar su cuenta:</span>'
+                + '<br />'
+                + '<a href="http://www.google.com.pe">http://www.google.com.pe</a>'
         };
 
         return transporter.sendMail(mailOptions, (error, info) => {
@@ -36,24 +39,36 @@ exports.sendMail = functions.https.onRequest((request, response) => {
 });
 
 exports.hello = functions.https.onRequest((request, response) => {
-
-    admin.firestore().collection('usuarios').add({ 'schicomax': { 'nombre': "SEBASTIAN CHICOMA" } })
+    admin.firestore().collection('usuarios').doc('fchicoma01@gmail.com').set({ 'nombres': "Fernando Luis Enrique" })
         .then(writeResult => {
             // write is complete here
             return response.send(JSON.stringify("Hola sebastian"));
-        }).catch(error =>{ 
+        }).catch(error => {
             console.log(error);
         });
-
 });
 
 // Función que se ejecutará al crear a un usuario
 exports.onCreateUsers = functions.firestore.document('usuarios/{identificador}')
-    .onWrite((change, context) => {
-        // If we set `/users/marie` to {name: "Marie"} then
-        // context.params.userId == "marie"
-        // ... and ...
-        // change.after.data() == {name: "Marie"}
-        console.log("viendo cambios para nuevo usuario: " + context.params.identificador);
-        console.log(JSON.stringify(change.after.data()));
+    .onCreate((snap, context) => {
+        const newUser = snap.data();
+        const to = context.params.identificador;
+        console.log('to:' + to);
+        console.log('newUser:' + JSON.stringify(newUser));
+        const mailOptions = {
+            from: '"Al mejor postor" <info@almejorpostor.com>',
+            to: to,
+            subject: 'Correo de activación',
+            html: '<b>Correo de activación</b>'
+                + '<br/>'
+                + '<span>Hola ' + newUser['nombres'] + ', sigue el enlace para poder activar su cuenta:</span>'
+                + '<br />'
+                + '<a href="http://www.google.com.pe">http://www.google.com.pe</a>'
+        };
+        console.log("preparando correo " + JSON.stringify(mailOptions));
+        return transporter.sendMail(mailOptions).then((info) => {
+            console.log("Correo enviado correctamente");
+        }).catch(error => {
+            console.log("Error al enviar correo");
+        });
     });
