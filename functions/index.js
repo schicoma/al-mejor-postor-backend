@@ -1,3 +1,5 @@
+const URL_WEB = 'https://angular-crud-firebase-9d4e9.firebaseapp.com';
+
 const functions = require('firebase-functions');
 const admin = require('firebase-admin');
 const nodemailer = require('nodemailer');
@@ -56,7 +58,7 @@ exports.verifyAccount = functions.https.onRequest((request, response) => {
             const user = value.docs[0].data();
 
             if (user.estado === 'OK') {
-                response.redirect('http://localhost:5000/expired-link')
+                response.redirect(URL_WEB + '/expired-link')
             }
 
             const encryptedEmail = Buffer.from(user.email).toString('base64');
@@ -65,10 +67,10 @@ exports.verifyAccount = functions.https.onRequest((request, response) => {
 
             updateUsers(user);
 
-            response.redirect('http://localhost:5000/login?verifiedAccount=true&token=' + encryptedEmail);
+            response.redirect(URL_WEB + '/login?verifiedAccount=true&token=' + encryptedEmail);
         }
 
-        response.redirect('http://localhost:5000/expired-link')
+        response.redirect(URL_WEB + '/expired-link')
 
         return true;
 
