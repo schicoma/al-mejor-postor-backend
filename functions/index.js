@@ -45,7 +45,8 @@ exports.hello = functions.https.onRequest((request, response) => {
         'estado': 'PE'
     }).then(writeResult => {
         // write is complete here
-        response.redirect('http://localhost:5000/login')
+        response.redirect('http://localhost:5000/login');
+        return true;
     }).catch(error => {
         console.log(error);
     });
@@ -69,11 +70,6 @@ exports.verifyAccount = functions.https.onRequest((request, response) => {
             // Reverse(assuming the content you're decoding is a utf8 string):
             // console.log(Buffer.from(b64Encoded, 'base64').toString());
 
-            async function updateUsers() {
-                await admin.auth().updateUser(user.email, { emailVerified: true });
-                await admin.firestore().collection("usuarios").doc(user.email).update({ 'estado': 'OK' });
-            }
-
             updateUsers();
 
             response.redirect('http://localhost:5000/login?verifiedAccount=true&token=' + encryptedEmail);
@@ -81,10 +77,17 @@ exports.verifyAccount = functions.https.onRequest((request, response) => {
 
         response.redirect('http://localhost:5000/expired-link')
 
+        return true;
+
     }).catch(error => {
         console.log(JSON.stringify(error));
     });
 });
+
+async function updateUsers() {
+    await admin.auth().updateUser(user.email, { emailVerified: true });
+    await admin.firestore().collection("usuarios").doc(user.email).update({ 'estado': 'OK' });
+}
 
 
 // Función que se ejecutará al crear a un usuario
