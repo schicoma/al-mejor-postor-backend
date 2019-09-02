@@ -1,4 +1,5 @@
 # al-mejor-postor-backend
+
   671  firebase emulators:start --only functions
   672  export FIRESTORE_EMULATOR_HOST=localhost:5002
   673  firebase functions:shell --debug
