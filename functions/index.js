@@ -15,13 +15,13 @@ let transporter = nodemailer.createTransport({
 
 exports.sendMail = functions.https.onRequest((request, response) => {
     cors(request, response, () => {
-        const to = 'fchicoma01@gmail.com';
+        const to = 'sebastianchicoma97@gmail.com';
 
         const mailOptions = {
             from: '"Sebastian :D" <sebastianchicoma97@gmail.com>',
             to: to,
             subject: 'Hola pepón',
-            html: '<b>aAHHHHHHHHHHHHHHH,.... piito</b>'
+            html: '<b>GITHUB INTEGRATION WITH TRAVIS (ONLY MASTER)</b>'
         };
 
         return transporter.sendMail(mailOptions, (error, info) => {
@@ -37,20 +37,14 @@ exports.sendMail = functions.https.onRequest((request, response) => {
 
 exports.hello = functions.https.onRequest((request, response) => {
 
-    console.log("1");
-
-    admin.firestore().collection('usuarios').add({ 'holi': { 'name': "boli" } })
+    admin.firestore().collection('usuarios').add({ 'schicomax': { 'nombre': "SEBASTIAN CHICOMA" } })
         .then(writeResult => {
             // write is complete here
-            console.log("3");
-
             return response.send(JSON.stringify("Hola sebastian"));
-
         }).catch(error =>{ 
             console.log(error);
         });
 
-    console.log("2");
 });
 
 // Función que se ejecutará al crear a un usuario
