@@ -70,7 +70,7 @@ exports.verifyAccount = functions.https.onRequest((request, response) => {
             // Reverse(assuming the content you're decoding is a utf8 string):
             // console.log(Buffer.from(b64Encoded, 'base64').toString());
 
-            updateUsers();
+            updateUsers(user);
 
             response.redirect('http://localhost:5000/login?verifiedAccount=true&token=' + encryptedEmail);
         }
@@ -84,8 +84,8 @@ exports.verifyAccount = functions.https.onRequest((request, response) => {
     });
 });
 
-async function updateUsers() {
-    await admin.auth().updateUser(user.email, { emailVerified: true });
+async function updateUsers(user) {
+    //await admin.auth().updateUser(user.email, { emailVerified: true });
     await admin.firestore().collection("usuarios").doc(user.email).update({ 'estado': 'OK' });
 }
 
