@@ -84,7 +84,6 @@ exports.verifyAccount = functions.https.onRequest((request, response) => {
     }).catch(error => {
         console.log(JSON.stringify(error));
     });
-
 });
 
 
