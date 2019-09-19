@@ -97,3 +97,71 @@ exports.hello = functions.https.onRequest((request, response) => {
         console.log(error);
     });
 });
+
+//Servicio para verificar la cuenta del usuario
+exports.updateNameProducts = functions.https.onRequest((request, response) => {
+
+    //let doc = request.query.doc;
+
+    return admin.firestore().collection("productos")//.doc(doc)
+        .get().then(values => {
+            console.log('encontrados');
+            values.forEach((value, index) => {
+                var name = value.data().nombre;
+                var doc = value.id;
+
+                console.log(index, doc, name);
+
+                var keywords = createKeywords(name);
+                console.log(keywords);
+
+                updateProduct(doc, keywords);
+            });
+
+            return true;
+
+        }).catch(error => {
+            console.log(JSON.stringify(error));
+
+            return true;
+        });
+});
+
+async function updateProduct(doc, keywords) {
+    await admin.firestore().collection("productos").doc(doc).update({ 'keywords': keywords });
+}
+
+function createKeywords(name) {
+    let merged = new Set();
+
+    let words = name.split(' ');
+    let words_length = name.split(' ').length;
+
+    for (let i = 0; i < words_length; i++) {
+        let buildName = '';
+
+        words.forEach((w, index) => {
+            if (index >= i) {
+                buildName = buildName.concat(w + ' ');
+            }
+        });
+
+        merged = new Set([...merged, ...generateArrayFromString(buildName)]);
+
+    }
+
+    return [...merged];
+
+}
+
+function generateArrayFromString(name) {
+    let arrName = [];
+    let curName = '';
+    name.split('').forEach((letter) => {
+        curName += letter;
+        if (curName.length >= 3) {
+            arrName.push(curName.trim());
+        }
+    });
+    return arrName;
+}
