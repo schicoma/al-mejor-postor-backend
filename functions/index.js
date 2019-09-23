@@ -317,3 +317,38 @@ function generateArrayFromString(name) {
     return arrName;
 }
 
+exports.onUpdateUsers = functions.firestore.document('usuarios/{identificador}').onUpdate((change, context) => {
+    // Get an object representing the document
+    // e.g. {'name': 'Marie', 'age': 66}
+    const newValue = change.after.data();
+
+    // ...or the previous value before this update
+    //const previousValue = change.before.data();
+
+    // access a particular field as you would any JS property
+    const name = newValue.nombres + ' ' + newValue.apellidos;
+
+    return admin.firestore().collection('ofertas').where('usuario.uid', '==', newValue.uid).get().then(results => {
+        // write is complete here
+
+        if (results) {
+            results.forEach((result) => {
+                updateNombreUsuarioFromOferta(result.id, name, newValue.uid);
+            });
+        }
+
+        return true;
+    }).catch(error => {
+        console.log(error);
+    });
+});
+
+async function updateNombreUsuarioFromOferta(uidOferta, nombreUsuario, uidUsuario) {
+    //console.log(uidOferta, nombreUsuario, uidUsuario);
+    await admin.firestore().collection('ofertas').doc(uidOferta).update({
+        usuario: {
+            nombre: nombreUsuario,
+            uid: uidUsuario
+        }
+    });
+}
