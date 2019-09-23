@@ -98,6 +98,154 @@ exports.hello = functions.https.onRequest((request, response) => {
     });
 });
 
+exports.closeSaleByProductId = functions.https.onRequest((request, response) => {
+    let uid = request.query.productUid;
+
+    console.log("TERMINAR SUBASTAS MENORES DE " + uid);
+
+    return admin.firestore().collection("productos").doc(uid).get().then(value => {
+
+        cerrarSubasta(value);
+
+        response.send("Se cerró la subasta de " + uid);
+        return true;
+    });
+
+});
+
+exports.closeSale = functions.https.onRequest((request, response) => {
+    let productos = admin.firestore().collection("productos");
+
+    console.log("TERMINAR SUBASTAS MENORES DE " + (new Date()));
+
+    // Create a query against the collection.
+    let query = productos.where("fechaFin", "<", new Date()).where("estado", "==", 'C');
+
+
+    return query.get().then(values => {
+        values.forEach((value, index) => {
+
+            cerrarSubasta(value);
+
+        });
+
+        response.send("Se cerraron " + values.length + " subastas");
+        return true;
+    });
+
+});
+
+async function cerrarSubasta(producto) {
+
+    let usuarioGanadorRef = admin.firestore().collection('ofertas')
+        .where('producto.uid', '==', producto.data().uid)
+        .orderBy('fecha', 'desc')
+        .limit(1);
+
+    let usuarioGanadorSync = await usuarioGanadorRef.get();
+    let usuarioGanadorUid;
+
+    usuarioGanadorSync.forEach(result => {
+        usuarioGanadorUid = result.data().usuario.uid;
+    });
+
+    if (!usuarioGanadorUid) {
+        usuarioGanadorUid = 'UNKNOWN';
+    }
+
+    await admin.firestore().collection("productos").doc(producto.data().uid).update({
+        estado: 'S',
+        usuarioGanador: {
+            uid: usuarioGanadorUid
+        }
+    });
+
+    if (usuarioGanadorUid !== 'UNKNOWN') {
+        console.log("GANADOR -> " + producto.data().usuario.uid);
+        let usuarioOwnerRef = admin.firestore().collection('usuarios')
+            .where('uid', '==', producto.data().usuario.uid)
+            .limit(1);
+
+        let usuarioOwnerSync = await usuarioOwnerRef.get();
+        let usuarioOwnerEmail;
+
+        usuarioOwnerSync.forEach(result => {
+            usuarioOwnerEmail = result.data().email;
+        });
+
+
+        let usuarioGanadorEmail;
+
+        let usuarioSync = await admin.firestore().collection('usuarios')
+            .where('uid', '==', usuarioGanadorUid)
+            .limit(1).get();
+
+        usuarioSync.forEach(result => {
+            usuarioGanadorEmail = result.data().email;
+        });
+
+        console.log("Envando correo a " + usuarioGanadorEmail);
+        enviarCorreoAGanador(usuarioGanadorEmail, producto.data().uid);
+        console.log("Envando correo a " + usuarioOwnerEmail);
+        enviarCorreoAlOwnerDelProducto(usuarioOwnerEmail, producto.data().uid);
+    }
+
+}
+
+async function enviarCorreoAlOwnerDelProducto(emailOwnerDelProducto, productoUid) {
+    const to = emailOwnerDelProducto;
+
+    const mailOptions = {
+        from: '"Al mejor postor" <info@almejorpostor.com>',
+        to: to,
+        subject: 'LA SUBASTA HA FINALIZADO',
+        html: '<b>La subasta ha finalizado</b>'
+            + '<br/>'
+            + '<span>Hola, la subasta de su producto ofertado a finalizado.</span>'
+            + '<br />'
+            + '<span>Vaya al siguiente enlace para conocer los datos del ganador: </span>'
+            + '<br />'
+            + '<a href="' + URL_WEB + '/product-detail/' + productoUid + '">'
+            + URL_WEB + '/product-detail/' + productoUid + '</a>'
+    };
+
+    console.log("preparando correo " + JSON.stringify(mailOptions));
+
+    transporter.sendMail(mailOptions).then((info) => {
+        console.log("Correo enviado correctamente a owner");
+        return true;
+    }).catch(error => {
+        console.log("Error al enviar correo");
+    });
+}
+
+async function enviarCorreoAGanador(emailUsuarioGanador, productoUid) {
+    const to = emailUsuarioGanador;
+
+    const mailOptions = {
+        from: '"Al mejor postor" <info@almejorpostor.com>',
+        to: to,
+        subject: 'LA SUBASTA HA FINALIZADO',
+        html: '<b>La subasta ha finalizado</b>'
+            + '<br/>'
+            + '<span>Hola, la subasta del producto donde usted participó ha terminado.</span>'
+            + '<br />'
+            + '<span>Vaya al siguiente enlace para contactar y conocer los datos del dueño del producto: </span>'
+            + '<br />'
+            + '<a href="' + URL_WEB + '/product-detail/' + productoUid + '">'
+            + URL_WEB + '/product-detail/' + productoUid + '</a>'
+    };
+
+    console.log("preparando correo " + JSON.stringify(mailOptions));
+
+    transporter.sendMail(mailOptions).then((info) => {
+        console.log("Correo enviado correctamente a ganador");
+        return true;
+    }).catch(error => {
+        console.log("Error al enviar correo");
+    });
+}
+
 //Servicio para verificar la cuenta del usuario
 exports.updateNameProducts = functions.https.onRequest((request, response) => {
 
@@ -105,21 +253,17 @@ exports.updateNameProducts = functions.https.onRequest((request, response) => {
 
     return admin.firestore().collection("productos")//.doc(doc)
         .get().then(values => {
-            console.log('encontrados');
             values.forEach((value, index) => {
                 var name = value.data().nombre;
                 var doc = value.id;
 
-                console.log(index, doc, name);
-
                 var keywords = createKeywords(name);
-                console.log(keywords);
 
                 updateProduct(doc, keywords);
             });
 
+            response.send("ok :) ");
             return true;
-
         }).catch(error => {
             console.log(JSON.stringify(error));
 
@@ -128,13 +272,20 @@ exports.updateNameProducts = functions.https.onRequest((request, response) => {
 });
 
 async function updateProduct(doc, keywords) {
-    await admin.firestore().collection("productos").doc(doc).update({ 'keywords': keywords });
+    await admin.firestore().collection("productos").doc(doc).update({
+        'keywords': keywords,
+        "uid": doc,
+        "estado": "C",
+        usuarioGanador: {
+            uid: '-'
+        }
+    });
 }
 
 function createKeywords(name) {
     let merged = new Set();
 
-    let words = name.split(' ');
+    let words = name.toUpperCase().split(' ');
     let words_length = name.split(' ').length;
 
     for (let i = 0; i < words_length; i++) {
@@ -165,3 +316,4 @@ function generateArrayFromString(name) {
     });
     return arrName;
 }
+
